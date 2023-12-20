@@ -1,0 +1,130 @@
+import React, { useState } from 'react';
+import { createStore } from 'redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
+import { Text, View, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+
+// Action types
+const ADD_TODO = 'ADD_TODO';
+const TOGGLE_TODO = 'TOGGLE_TODO';
+
+// Action creators
+const addTodo = (text) => ({
+  type: ADD_TODO,
+  payload: { text },
+});
+
+const toggleTodo = (id) => ({
+  type: TOGGLE_TODO,
+  payload: { id },
+});
+
+// Reducer
+const initialState = {
+  todos: [],
+};
+
+const todoReducer = (state = initialState, action) => {
+  switch (action.type) {
+    case ADD_TODO:
+      return {
+        todos: [
+          ...state.todos,
+          {
+            id: state.todos.length + 1,
+            text: action.payload.text,
+            completed: false,
+          },
+        ],
+      };
+    case TOGGLE_TODO:
+      return {
+        todos: state.todos.map((todo) =>
+          todo.id === action.payload.id
+            ? { ...todo, completed: !todo.completed }
+            : todo
+        ),
+      };
+    default:
+      return state;
+  }
+};
+
+const store = createStore(todoReducer);
+
+// Styles
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingLeft: 10,
+  },
+  list: {
+    marginTop: 10,
+  },
+  todoItem: {
+    marginBottom: 5,
+  },
+});
+
+// TodoApp component
+const TodoApp = () => {
+  const todos = useSelector((state) => state.todos);
+  const dispatch = useDispatch();
+  const [newTodo, setNewTodo] = useState('');
+
+  const handleAddTodo = () => {
+    if (newTodo.trim() !== '') {
+      dispatch(addTodo(newTodo));
+      setNewTodo('');
+    }
+  };
+
+  const handleToggleTodo = (id) => {
+    dispatch(toggleTodo(id));
+  };
+
+  return (
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Add a new todo"
+        value={newTodo}
+        onChangeText={(text) => setNewTodo(text)}
+      />
+      <Button title="Add Todo" onPress={handleAddTodo} />
+      <FlatList
+        style={styles.list}
+        data={todos}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.todoItem}>
+            <Text
+              onPress={() => handleToggleTodo(item.id)}
+              style={{ textDecorationLine: item.completed ? 'line-through' : 'none' }}
+            >
+              {item.text}
+            </Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+// App component
+const App = () => {
+  return (
+    <Provider store={store}>
+      <TodoApp />
+    </Provider>
+  );
+};
+
+export default App;
